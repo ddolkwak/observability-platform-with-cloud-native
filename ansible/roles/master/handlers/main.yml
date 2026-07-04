@@ -1,9 +1,2 @@
 ---
-# handlers file for common
-# Restart kubelet
-- name: restart_kubelet
-  systemd:
-    name: kubelet
-    state: restarted
-    daemon_reload: yes
-    enabled: yes
+# handlers file for master
