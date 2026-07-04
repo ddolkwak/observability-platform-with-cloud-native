@@ -52,3 +52,12 @@
 ## green.example.com
 ## blue.example.com
 
+[master]
+k8s-master ansible_host=192.168.56.130
+
+[workers]
+k8s-worker-1 ansible_host=192.168.56.131
+k8s-worker-2 ansible_host=192.168.56.132
+
+[all:vars]
+ansible_user=admin
