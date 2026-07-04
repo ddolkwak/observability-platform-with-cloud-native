@@ -43,7 +43,7 @@
 # 4. 필수 패키지 설치
 - name: Install prerequisite packages
   apt:
-    name: ['apt-transport-https', 'ca-certificates', 'curl', 'gpg']
+    name: "{{ common_prereq_packages }}"
     state: present
     update_cache: yes
 
@@ -54,10 +54,10 @@
     state: directory
     mode: '0755'
 
-# 7. CRI-O 저장소 세팅 (v1.30 기준)
+# 7. CRI-O 저장소 세팅
 - name: Download CRI-O GPG key
   get_url:
-    url: https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.30/deb/Release.key
+    url: "{{ crio_repo_base_url }}/Release.key"
     dest: /tmp/cri-o-release.key
 
 - name: Dearmor CRI-O GPG key
@@ -67,14 +67,14 @@
 
 - name: Add CRI-O apt repository
   apt_repository:
-    repo: "deb [signed-by=/etc/apt/keyrings/cri-o-apt-keyring.gpg] https://pkgs.k8s.io/addons:/cri-o:/stable:/v1.30/deb/ /"
+    repo: "deb [signed-by=/etc/apt/keyrings/cri-o-apt-keyring.gpg] {{ crio_repo_base_url }}/ /"
     state: present
     filename: cri-o
 
-# 8. K8s 저장소 세팅 (v1.30 기준)
+# 8. K8s 저장소 세팅
 - name: Download K8s GPG key
   get_url:
-    url: https://pkgs.k8s.io/core:/stable:/v1.30/deb/Release.key
+    url: "{{ k8s_repo_base_url }}/Release.key"
     dest: /tmp/kubernetes-release.key
 
 - name: Dearmor K8s GPG key
@@ -84,19 +84,19 @@
 
 - name: Add Kubernetes apt repository
   apt_repository:
-    repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.30/deb/ /"
+    repo: "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] {{ k8s_repo_base_url }}/ /"
     state: present
     filename: kubernetes
 
 # 9. CRI-O 및 K8s 컴포넌트 설치
 - name: Install cri-o, kubelet, kubeadm, kubectl
   apt:
-    name: ['cri-o', 'kubelet', 'kubeadm', 'kubectl']
+    name: "{{ common_k8s_packages }}"
     state: present
     update_cache: yes
 
 - name: Prevent K8s packages from being upgraded automatically
-  command: apt-mark hold cri-o kubelet kubeadm kubectl
+  command: "apt-mark hold {{ common_k8s_packages | join(' ') }}"
 
 # 10. CRI-O 서비스 활성화 및 시작
 - name: Enable and start CRI-O service
