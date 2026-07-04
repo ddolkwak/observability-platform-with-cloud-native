@@ -34,6 +34,9 @@ Vagrant.configure("2") do |config|
       useradd -m -s /bin/bash -u 1234 -g admin admin
       echo "admin:admin./" | chpasswd
       chown admin:admin /home/admin
+      cp /etc/skel/.bashrc /home/admin/
+      cp /etc/skel/.profile /home/admin/
+      chown admin:admin /home/admin/.bashrc /home/admin/.profile
     fi
 
     echo '======== [4] admin 사용자에게 비밀번호 없는 sudo 권한 부여 (Ansible 제어용) ========'
