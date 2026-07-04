@@ -1,0 +1,23 @@
+---
+# tasks file for helm
+- name: "Helm Package Manager Installation"
+  block:
+    - name: 1. Install prerequisites (git) for Helm plugins
+      apt:
+        name: git
+        state: present
+        update_cache: true
+
+    - name: 2. Download Helm installation script
+      get_url:
+        url: "{{ helm_script_url }}"
+        dest: "/tmp/get_helm.sh"
+        mode: '0700'
+
+    - name: 3. Execute Helm installation script
+      command: "/tmp/get_helm.sh"
+      environment:
+        DESIRED_VERSION: "{{ helm_version | default('') }}"
+        PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
+      args:
+        creates: "{{ helm_bin_path }}"

@@ -1,0 +1,7 @@
+---
+# defaults file for helm
+
+helm_script_url: "https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3"
+helm_version: "v3.14.0"
+helm_download_dest: "/tmp/get_helm.sh"
+helm_bin_path: "/usr/local/bin/helm"
