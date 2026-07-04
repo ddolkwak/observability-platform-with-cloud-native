@@ -30,10 +30,8 @@ Vagrant.configure("2") do |config|
     systemctl restart sshd
 
     echo '======== [3] admin 사용자 생성 및 비밀번호(admin./) 설정 ========'
-    # 닭과 달걀 문제를 해결하기 위해 group과 user의 UID/GID를 1001로 명시적 지정합니다.
     if ! id "admin" &>/dev/null; then
-      groupadd -g 1001 admin
-      useradd -m -s /bin/bash -u 1001 -g admin admin
+      useradd -m -s /bin/bash -u 1234 -g admin admin
       echo "admin:admin./" | chpasswd
     fi
 
@@ -41,7 +39,7 @@ Vagrant.configure("2") do |config|
     echo "admin ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/admin
     chmod 0440 /etc/sudoers.d/admin
 
-    echo '======== [5]  admin 계정 기준의 SSH Key 패스워드리스 환경 구축 ========'
+    echo '======== [5] admin 계정 기준의 SSH Key 패스워드리스 환경 구축 ========'
     mkdir -p /home/admin/.ssh
     chown -R admin:admin /home/admin/.ssh
     
@@ -92,11 +90,12 @@ EOF
       vb.cpus = 1
     end
 
-    # [Ansible 디렉토리-git repo 연동 설정]
-    # 아직 이름 정보가 없으므로 UID/GID인 1001번으로 세팅하여 충돌을 방지
+    # [공유 폴더 연동 설정]
+    # 호스트의 "./ansible" 폴더를 VM의 "/home/admin/ansible"로 마운트
+    # UID 1234(admin) 및 시스템 그룹 "admin"을 명시적으로 연결
     ansible.vm.synced_folder "./ansible", "/home/admin/ansible",
-      owner: 1001,
-      group: 1001,
+      owner: 1234,
+      group: "admin",
       mount_options: ["dmode=755", "fmode=644"]
 
     ansible.vm.provision :shell, privileged: true, inline: $install_default
@@ -104,6 +103,12 @@ EOF
       export DEBIAN_FRONTEND=noninteractive
       apt-add-repository --yes --update ppa:ansible/ansible
       apt-get install -y ansible
+
+      echo '======== [9] 교차 연동 및 기본 파일 이관 작업 ========'
+      cp -r /etc/ansible/* /home/admin/ansible/ 2>/dev/null || true
+      rm -rf /etc/ansible
+      ln -s /home/admin/ansible /etc/ansible
+      chown -R admin:admin /home/admin/ansible/
     SHELL
   end
 
