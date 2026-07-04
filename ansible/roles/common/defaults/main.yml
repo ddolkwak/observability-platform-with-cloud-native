@@ -1,2 +1,19 @@
 ---
 # defaults file for common
+# 1. 필수 패키지 목록
+common_prereq_packages:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - gpg
+
+# 2. K8s 핵심 컴포넌트 목록
+common_k8s_packages:
+  - cri-o
+  - kubelet
+  - kubeadm
+  - kubectl
+
+# 3. 저장소 기본 URL (group_vars의 버전 변수 참조)
+crio_repo_base_url: "https://pkgs.k8s.io/addons:/cri-o:/stable:/{{ crio_version }}/deb"
+k8s_repo_base_url: "https://pkgs.k8s.io/core:/stable:/{{ kubernetes_version }}/deb"
