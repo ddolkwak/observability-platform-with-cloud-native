@@ -30,8 +30,10 @@ Vagrant.configure("2") do |config|
     systemctl restart sshd
 
     echo '======== [3] admin 사용자 생성 및 비밀번호(admin./) 설정 ========'
+    # 닭과 달걀 문제를 해결하기 위해 group과 user의 UID/GID를 1001로 명시적 지정합니다.
     if ! id "admin" &>/dev/null; then
-      useradd -m -s /bin/bash -g admin admin
+      groupadd -g 1001 admin
+      useradd -m -s /bin/bash -u 1001 -g admin admin
       echo "admin:admin./" | chpasswd
     fi
 
@@ -89,6 +91,14 @@ EOF
       vb.memory = 1024
       vb.cpus = 1
     end
+
+    # [Ansible 디렉토리-git repo 연동 설정]
+    # 아직 이름 정보가 없으므로 UID/GID인 1001번으로 세팅하여 충돌을 방지
+    ansible.vm.synced_folder "./ansible", "/home/admin/ansible",
+      owner: 1001,
+      group: 1001,
+      mount_options: ["dmode=755", "fmode=644"]
+
     ansible.vm.provision :shell, privileged: true, inline: $install_default
     ansible.vm.provision :shell, privileged: true, inline: <<-SHELL
       export DEBIAN_FRONTEND=noninteractive
