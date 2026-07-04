@@ -1,0 +1,7 @@
+---
+# tasks file for worker
+# 마스터에서 저장한 명령어를 실행하여 클러스터에 조인
+- name: Join worker nodes to the cluster
+  shell: "{{ extracted_join_cmd }}"
+  args:
+    creates: /etc/kubernetes/kubelet.conf

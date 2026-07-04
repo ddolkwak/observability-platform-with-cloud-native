@@ -1,0 +1,66 @@
+---
+# tasks file for master
+# 1. Kubeadm 초기화 (내부망 IP 대역 192.168.56.130 지정)
+- name: Initialize Kubernetes cluster
+  command: kubeadm init --apiserver-advertise-address=192.168.56.130 --pod-network-cidr=10.244.0.0/16
+  args:
+    creates: /etc/kubernetes/admin.conf
+
+# 2. admin 사용자가 kubectl을 사용할 수 있도록 설정
+- name: Create .kube directory for admin user
+  file:
+    path: /home/admin/.kube
+    state: directory
+    owner: admin
+    group: admin
+    mode: '0755'
+
+- name: Copy admin.conf to admin user's kubeconfig
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /home/admin/.kube/config
+    remote_src: yes
+    owner: admin
+    group: admin
+    mode: '0600'
+
+# root 사용자를 위한 Kubeconfig 심볼릭 링크 설정
+- name: Ensure .kube directory exists for root user
+  file:
+    path: /root/.kube
+    state: directory
+    mode: '0700'
+
+- name: Link admin kubeconfig to root kubeconfig
+  file:
+    src: /home/admin/.kube/config
+    dest: /root/.kube/config
+    state: link
+
+- name: 2. admin 계정의 .bashrc에 kubectl alias 추가
+  lineinfile:
+    path: /home/admin/.bashrc
+    line: "alias k='kubectl'"
+    regexp: "^alias k="
+    owner: admin
+    group: admin
+    mode: '0644'
+
+# 3. Flannel CNI 네트워크 플러그인 설치
+#- name: Install Flannel Pod Network
+#  command: kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
+#  become_user: admin
+
+# 4. 워커 노드가 가입할 수 있는 Join 명령어 추출
+- name: Generate and Delegate Join Command
+  block:
+    - name: Generate kubeadm join command
+      command: kubeadm token create --print-join-command
+      register: join_command_raw
+
+    - name: Set Join Command for Workers
+      set_fact:
+        extracted_join_cmd: "{{ join_command_raw.stdout }}"
+      delegate_to: "{{ item }}"
+      delegate_facts: true
+      loop: "{{ groups['workers'] }}"

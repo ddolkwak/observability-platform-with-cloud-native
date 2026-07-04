@@ -1,0 +1,18 @@
+---
+- name: 1. Setup Common Requirements on all nodes
+  hosts: all
+  become: yes
+  roles:
+    - common
+
+- name: 2. Initialize Master Node
+  hosts: master
+  become: yes
+  roles:
+    - master
+
+- name: 3. Join Worker Nodes to Cluster
+  hosts: workers
+  become: yes
+  roles:
+    - worker
