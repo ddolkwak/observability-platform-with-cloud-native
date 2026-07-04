@@ -18,28 +18,28 @@ Vagrant.configure("2") do |config|
   $install_default = <<-SHELL
     export DEBIAN_FRONTEND=noninteractive
 
-    echo '======== [1] OS 기본 최적화 및 admin 계정 설정 ========'
-    # Ubuntu 기본 SSH 제한 해제 및 패스워드 인증 허용
+    echo '======== OS 기본 최적화 및 admin 계정 설정 ========'
+    echo '======== [1] Ubuntu 기본 SSH 제한 해제 및 패스워드 인증 허용 ========'
     sed -i 's/^#*PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
     sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
     sed -i 's/^PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
     rm -f /etc/ssh/sshd_config.d/60-cloudimg-settings.conf
     
-    # 노드 간 통신 시 SSH 지문 묻기 무시
+    echo '======== [2] 노드 간 통신 시 SSH 지문 묻기 무시 ========'
     echo -e "Host *\n\tStrictHostKeyChecking no\n" >> /etc/ssh/ssh_config
     systemctl restart sshd
 
-    # admin 사용자 생성 및 비밀번호(admin./) 설정
+    echo '======== [3] admin 사용자 생성 및 비밀번호(admin./) 설정 ========'
     if ! id "admin" &>/dev/null; then
       useradd -m -s /bin/bash -g admin admin
       echo "admin:admin./" | chpasswd
     fi
 
-    # admin 사용자에게 비밀번호 없는 sudo 권한 부여 (Ansible 제어용)
+    echo '======== [4] admin 사용자에게 비밀번호 없는 sudo 권한 부여 (Ansible 제어용) ========'
     echo "admin ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/admin
     chmod 0440 /etc/sudoers.d/admin
 
-    # admin 계정 기준의 SSH Key 패스워드리스 환경 구축
+    echo '======== [5]  admin 계정 기준의 SSH Key 패스워드리스 환경 구축 ========'
     mkdir -p /home/admin/.ssh
     chown -R admin:admin /home/admin/.ssh
     
@@ -56,14 +56,16 @@ Vagrant.configure("2") do |config|
         cat /vagrant/admin_rsa.pub >> /home/admin/.ssh/authorized_keys
       fi
     fi
-    
+
+    echo '======== [6] 디렉토리 권한 설정 ========'
     chown -R admin:admin /home/admin/.ssh
     chmod 700 /home/admin/.ssh
     chmod 600 /home/admin/.ssh/authorized_keys
 
+    echo '======== [7] Timezone 세팅 ========'
     timedatectl set-timezone Asia/Seoul
 
-    # 모든 노드간 이름 해소를 위한 /etc/hosts 자동 등록
+    echo '======== [8] 모든 노드간 이름 해소를 위한 /etc/hosts 자동 등록 ========'
     if ! grep -q "k8s-master" /etc/hosts; then
       chmod 777 /etc/hosts
       cat << EOF >> /etc/hosts
