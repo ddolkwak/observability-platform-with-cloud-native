@@ -1,3 +1,4 @@
 ---
+# Global Variables
 kubernetes_version: "v1.30"
 crio_version: "v1.30"
