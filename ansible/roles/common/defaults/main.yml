@@ -22,7 +22,9 @@ common_k8s_dependencies:
   - iptables
   - socat
   - nfs-common
-    
+  - python3-kubernetes
+  - python3-yaml  
+
 # 4. 저장소 기본 URL (group_vars의 버전 변수 참조)
 crio_repo_base_url: "https://pkgs.k8s.io/addons:/cri-o:/stable:/{{ crio_version }}/deb"
 k8s_repo_base_url: "https://pkgs.k8s.io/core:/stable:/{{ kubernetes_version }}/deb"

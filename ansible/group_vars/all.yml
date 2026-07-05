@@ -9,6 +9,7 @@ crio_version: "v1.30"
 
 # Helm Version
 helm_version: "v3.20.2"
+helm_bin_path: "/usr/local/bin/helm"
 
 # NFS Infrastrcuture & Network Settings
 nfs_server_ip: "192.168.56.133"

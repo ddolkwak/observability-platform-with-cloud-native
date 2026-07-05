@@ -26,6 +26,7 @@
 
 - name: 1.4 Install Helm Package Manager
   hosts: master
+  become: yes
   roles:
     - helm
 
