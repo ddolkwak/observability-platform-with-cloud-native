@@ -7,6 +7,9 @@ kubernetes_version: "v1.30"
 # Container Runtime Version
 crio_version: "v1.30"
 
+# Helm Version
+helm_version: "v3.20.2"
+
 # NFS Infrastrcuture & Network Settings
 nfs_server_ip: "192.168.56.133"
 nfs_shared_path: "/srv/nfs_shared/kubernetes"

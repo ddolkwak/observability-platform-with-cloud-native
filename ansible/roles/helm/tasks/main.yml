@@ -6,7 +6,7 @@
       apt:
         name: git
         state: present
-        update_cache: true
+        update_cache: yes
 
     - name: 2. Download Helm installation script
       get_url:
@@ -21,3 +21,5 @@
         PATH: "/usr/local/bin:{{ ansible_env.PATH }}"
       args:
         creates: "{{ helm_bin_path }}"
+
+  when: inventory_hostname in groups['master']

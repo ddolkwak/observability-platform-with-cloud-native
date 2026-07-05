@@ -24,6 +24,11 @@
   roles:
     - worker
 
+- name: 1.4 Install Helm Package Manager
+  hosts: master
+  roles:
+    - helm
+
 # ===============================================
 # Phase 2: NFS Storage Infrastructure Provisioning
 # ===============================================
