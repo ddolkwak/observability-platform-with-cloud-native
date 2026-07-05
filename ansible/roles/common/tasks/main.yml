@@ -40,7 +40,15 @@
     - { name: 'net.bridge.bridge-nf-call-iptables', value: '1' }
     - { name: 'net.bridge.bridge-nf-call-ip6tables', value: '1' }
 
-# 4. 필수 패키지 설치
+# 4. Ubuntu firewall(UFW) 해제
+- name: 2. Disable UFW Firewall
+  systemd:
+    name: ufw
+    state: stopped
+    enabled: false
+  ignore_errors: true
+
+# 5. 필수 패키지 설치
 - name: Install prerequisite packages
   apt:
     name: "{{ common_prereq_packages }}"
@@ -88,10 +96,9 @@
     state: present
     filename: kubernetes
 
-# 9. CRI-O 및 K8s 컴포넌트 설치
-- name: Install cri-o, kubelet, kubeadm, kubectl
+# 9. 의존성 패키지 및 K8s 컴포넌트 설치
   apt:
-    name: "{{ common_k8s_packages }}"
+    name: "{{ common_k8s_dependencies + common_k8s_packages }}"
     state: present
     update_cache: yes
 

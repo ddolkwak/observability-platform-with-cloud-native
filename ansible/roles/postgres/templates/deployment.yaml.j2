@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: "{{ pg_namespace }}"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: "{{ pg_image }}"
+        env:
+        - name: POSTGRES_PASSWORD
+          value: "{{ pg_password }}"
+        ports:
+        - containerPort: {{ pg_port }}
+        volumeMounts:
+        - name: pg-data
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: pg-data
+        persistentVolumeClaim:
+          claimName: "{{ pg_pvc_name }}"

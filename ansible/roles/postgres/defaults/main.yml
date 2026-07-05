@@ -1,0 +1,9 @@
+---
+# defaults file for postgres
+pg_namespace: "postgres"
+pg_pvc_name: "pg-pvc"
+pg_storage_size: "20Gi"
+pg_image: "postgres:15"
+pg_password: "postgres"
+pg_port: 5432
+pg_svc_type: "LoadBalancer"

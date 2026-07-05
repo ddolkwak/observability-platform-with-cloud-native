@@ -1,0 +1,28 @@
+---
+# tasks file for nfs-provisioner
+- name: Create Namespace for NFS Provisioner
+  kubernetes.core.k8s:
+    name: "{{ nfs_provisioner_namespace }}"
+    kind: Namespace
+    state: present
+
+- name: Add Helm Repo(nfs-subdir-external-provisioner)
+  kubernetes.core.helm_repository:
+    name: "{{ nfs_provisioner_repo_name }}"
+    repo_url: "{{ nfs_provisioner_repo_url }}"
+    binary_path: "{{ helm_path }}"
+
+- name: Install NFS Subdir External Provisioner
+  kubernetes.core.helm:
+    name: nfs-subdir-provisioner
+    chart_ref: "{{ nfs_provisioner_chart_ref }}"
+    chart_version: "{{ nfs_provisioner_chart_version }}"
+    release_namespace: "{{ nfs_provisioner_namespace }}"
+    binary_path: "{{ helm_path }}"
+    values:
+      nfs:
+        server: "{{ nfs_server_ip }}" 
+        path: "{{ nfs_shared_path }}"
+      storageClass:
+        name: "{{ storage_class_name }}"
+        defaultClass: "{{ is_default_storage_class | bool }}"

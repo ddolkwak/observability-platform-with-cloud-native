@@ -1,0 +1,12 @@
+---
+# defaults file for nfs-provisioner
+# Helm Chart Settings
+nfs_provisioner_repo_name: "nfs-subdir-external-provisioner"
+nfs_provisioner_repo_url: "https://kubernetes-sigs.github.io/nfs-subdir-external-provisioner/"
+nfs_provisioner_chart_ref: "nfs-subdir-external-provisioner/nfs-subdir-external-provisioner"
+nfs_provisioner_chart_version: "4.0.18"
+
+# Kubernetes Resources Settings
+nfs_provisioner_namespace: "nfs-provisioner"
+storage_class_name: "nfs-storage"
+is_default_storage_class: "true"

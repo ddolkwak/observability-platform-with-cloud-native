@@ -1,0 +1,22 @@
+---
+# tasks file for postgres
+- name: Create Namespace for Postgres
+  kubernetes.core.k8s:
+    name: "{{ pg_namespace }}"
+    kind: Namespace
+    state: present
+
+- name: Create PersistentVolumeClaim for Postgres
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'pvc.yaml.j2') }}"
+
+- name: Create Deployment for Postgres
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'deployment.yaml.j2') }}"
+
+- name: Create Service for Postgres
+  kubernetes.core.k8s:
+    state: present
+    definition: "{{ lookup('template', 'svc.yaml.j2') }}"

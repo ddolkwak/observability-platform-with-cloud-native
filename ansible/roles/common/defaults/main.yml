@@ -14,6 +14,15 @@ common_k8s_packages:
   - kubeadm
   - kubectl
 
-# 3. 저장소 기본 URL (group_vars의 버전 변수 참조)
+# 3. K8s 구동 및 네트워킹/NFS 시스템 의존성 패키지
+common_k8s_dependencies:
+  - conntrack
+  - ebtables
+  - ethtool
+  - iptables
+  - socat
+  - nfs-common
+    
+# 4. 저장소 기본 URL (group_vars의 버전 변수 참조)
 crio_repo_base_url: "https://pkgs.k8s.io/addons:/cri-o:/stable:/{{ crio_version }}/deb"
 k8s_repo_base_url: "https://pkgs.k8s.io/core:/stable:/{{ kubernetes_version }}/deb"
