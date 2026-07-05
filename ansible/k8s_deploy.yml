@@ -1,18 +1,42 @@
 ---
-- name: 1. Setup Common Requirements on all nodes
-  hosts: all
+# Cluster Deployment Playbook
+#
+# ===============================================
+# Phase 1: Core Cluster Setup
+# ===============================================
+- name: 1.1 Setup Common Requirements on all nodes
+  hosts:
+    - master
+    - workers
   become: yes
   roles:
     - common
 
-- name: 2. Initialize Master Node
+- name: 1.2 Initialize Master Node
   hosts: master
   become: yes
   roles:
     - master
 
-- name: 3. Join Worker Nodes to Cluster
+- name: 1.3 Join Worker Nodes to Cluster
   hosts: workers
   become: yes
   roles:
     - worker
+
+# ===============================================
+# Phase 2: NFS Storage Infrastructure Provisioning
+# ===============================================
+- name: 2.1 Deploy NFS Dynamic Provisioner
+  hosts: master
+  become: yes
+  roles:
+    - nfs-provisioner
+
+# ===============================================
+# Phase 3: Postgres Database Deployment
+# ===============================================
+- name: 3.1 Deploy Postgres Database
+  hosts: master
+  roles:
+    - postgres

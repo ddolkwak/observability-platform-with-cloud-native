@@ -97,6 +97,7 @@
     filename: kubernetes
 
 # 9. 의존성 패키지 및 K8s 컴포넌트 설치
+- name: Install K8s dependencies and core components
   apt:
     name: "{{ common_k8s_dependencies + common_k8s_packages }}"
     state: present
