@@ -111,7 +111,7 @@
   service:
     name: crio
     state: restarted
-    enabled: yes
+    enabled: no
 
 # 11. 다중 네트워크 인터페이스 환경을 위한 Node IP 고정 설정
 - name: Configure kubelet node-ip for multi-nic environment
@@ -120,3 +120,10 @@
     line: "KUBELET_EXTRA_ARGS=--node-ip={{ ansible_host }}"
     create: yes
   notify: restart_kubelet
+
+# 12. Kubelet 서비스 자동 활성화 해제(shutdown/startup 플레이북 동작 목적)
+- name: Disable kubelet autostart on boot
+  service:
+    name: kubelet
+    enabled: no
+

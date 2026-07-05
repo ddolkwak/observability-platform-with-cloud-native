@@ -1,0 +1,83 @@
+---
+# tasks for k8s_startup.yml
+# ==========================================
+# [1] : Master Node Startup & Uncordon
+# ==========================================
+- name: Startup and Uncordon Master Node
+  hosts: master
+  become: yes
+  vars:
+    node_name: "{{ inventory_hostname }}"
+    kubeconfig_path: "/etc/kubernetes/admin.conf"
+
+  tasks:
+    - name: Ensure container runtime is running on master
+      systemd:
+        name: crio
+        state: started
+        enabled: yes
+
+    - name: Ensure kubelet is running on master
+      systemd:
+        name: kubelet
+        state: started
+        enabled: yes
+
+# Enable This Task After CNI(Cilium) Installation
+#    - name: Wait for master node to be Ready
+#      command: kubectl wait --for=condition=Ready node/{{ node_name }} --timeout=120s
+#      environment:
+#        KUBECONFIG: "{{ kubeconfig_path }}"
+
+# Delete This Task After CNI(Cilium) Installation - Temp Task                                                                                                   
+    - name: Wait for Kubernetes API server to be up                                                                                                             
+      command: kubectl get nodes                                                                                                                                
+      environment:                                                                                                                                              
+        KUBECONFIG: "{{ kubeconfig_path }}"                                                                                                                     
+      register: api_status                                                                                                                                      
+      until: api_status.rc == 0                                                                                                                                 
+      retries: 24      # 5s for 24 times = 120s                                                                                                                 
+      delay: 5                                                                                                                                                  
+      changed_when: false  
+
+    - name: Uncordon the master node
+      command: kubectl uncordon {{ node_name }}
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+
+
+# ==========================================
+# [2] : Worker Node Startup & Uncordon
+# ==========================================
+- name: Startup and Uncordon Worker Nodes
+  hosts: workers
+  become: yes
+  vars:
+    node_name: "{{ inventory_hostname }}"
+    kubeconfig_path: "/etc/kubernetes/admin.conf"
+
+  tasks:
+    - name: Ensure container runtime is running on worker
+      systemd:
+        name: crio
+        state: started
+        enabled: yes
+
+    - name: Ensure kubelet is running on worker
+      systemd:
+        name: kubelet
+        state: started
+        enabled: yes
+
+# Enable This Task After CNI(Cilium) Installation
+#    - name: Wait for worker node to be Ready
+#      command: kubectl wait --for=condition=Ready node/{{ node_name }} --timeout=120s
+#      environment:
+#        KUBECONFIG: "{{ kubeconfig_path }}"
+#      delegate_to: "{{ groups['master'][0] }}"
+
+    - name: Uncordon the worker node
+      command: kubectl uncordon {{ node_name }}
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      delegate_to: "{{ groups['master'][0] }}"

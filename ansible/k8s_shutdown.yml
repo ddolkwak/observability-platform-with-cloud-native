@@ -1,0 +1,87 @@
+---
+# tasks for k8s_shutdown.yml
+# ==========================================
+# [1] : Worker Node Graceful Shutdown
+# ==========================================
+- name: Graceful Shutdown for Worker Nodes
+  hosts: workers
+  become: yes
+  vars:
+    node_name: "{{ inventory_hostname }}"
+    kubeconfig_path: "/etc/kubernetes/admin.conf"
+
+  tasks:
+    - name: Cordon the worker node
+      command: kubectl cordon {{ node_name }}
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      delegate_to: "{{ groups['master'][0] }}"
+
+    - name: Drain the worker node
+      command: >
+        kubectl drain {{ node_name }}
+        --ignore-daemonsets
+        --delete-emptydir-data
+        --force
+        --grace-period=30
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      delegate_to: "{{ groups['master'][0] }}"
+
+    - name: Stop kubelet on worker
+      systemd:
+        name: kubelet
+        state: stopped
+
+    - name: Stop container runtime on worker
+      systemd:
+        name: crio
+        state: stopped
+
+    - name: Shutdown the worker VM
+      command: /sbin/shutdown -h now
+      async: 1
+      poll: 0
+      ignore_errors: true
+
+# ==========================================
+# [2] : Master Node Graceful Shutdown
+# ==========================================
+- name: Graceful Shutdown for Master Node
+  hosts: master
+  become: yes
+  vars:
+    node_name: "{{ inventory_hostname }}"
+    kubeconfig_path: "/etc/kubernetes/admin.conf"
+
+  tasks:
+    - name: Cordon the master node
+      command: kubectl cordon {{ node_name }}
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+
+    - name: Drain the master node
+      command: >
+        kubectl drain {{ node_name }}
+        --ignore-daemonsets
+        --delete-emptydir-data
+        --force
+        --grace-period=30
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+
+    - name: Stop kubelet on master
+      systemd:
+        name: kubelet
+        state: stopped
+
+    - name: Stop container runtime on master
+      systemd:
+        name: crio
+        state: stopped
+
+    - name: Shutdown the master VM
+      command: /sbin/shutdown -h now
+      async: 1
+      poll: 0
+      ignore_errors: true
