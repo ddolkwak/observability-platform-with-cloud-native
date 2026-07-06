@@ -1,20 +1,20 @@
 ---
 # defaults file for common
-# 1. 필수 패키지 목록
+# 1. Lists of Necessary Packages
 common_prereq_packages:
   - apt-transport-https
   - ca-certificates
   - curl
   - gpg
 
-# 2. K8s 핵심 컴포넌트 목록
+# 2. Lists of K8s Core Components
 common_k8s_packages:
   - cri-o
   - kubelet
   - kubeadm
   - kubectl
 
-# 3. K8s 구동 및 네트워킹/NFS 시스템 의존성 패키지
+# 3. K8s Ops & NW/NFS System Dependencies
 common_k8s_dependencies:
   - conntrack
   - ebtables
@@ -25,6 +25,6 @@ common_k8s_dependencies:
   - python3-kubernetes
   - python3-yaml  
 
-# 4. 저장소 기본 URL (group_vars의 버전 변수 참조)
+# 4. Repository Default URL
 crio_repo_base_url: "https://pkgs.k8s.io/addons:/cri-o:/stable:/{{ crio_version }}/deb"
 k8s_repo_base_url: "https://pkgs.k8s.io/core:/stable:/{{ kubernetes_version }}/deb"
