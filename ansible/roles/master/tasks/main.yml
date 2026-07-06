@@ -75,6 +75,46 @@
     remote_src: yes
     mode: '0755'
 
+- name: Install Helm CLI locally on Master Node
+  block:
+    - name: Set Helm Facts
+      set_fact:
+        helm_ver: "{{ helm_version | default('v3.20.2') }}"
+        helm_arch: "{{ 'amd64' if ansible_architecture == 'x86_64' else 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}"
+
+    - name: Download Helm package archive
+      get_url:
+        url: "https://get.helm.sh/helm-{{ helm_ver }}-linux-{{ helm_arch }}.tar.gz"
+        dest: "/tmp/helm-{{ helm_ver }}-linux-{{ helm_arch }}.tar.gz"
+        mode: '0644'
+
+    - name: Create temporary directory for Helm unarchive
+      file:
+        path: "/tmp/helm_unarchive"
+        state: directory
+        mode: '0755'
+
+    - name: Unarchive Helm binary on target host
+      unarchive:
+        src: "/tmp/helm-{{ helm_ver }}-linux-{{ helm_arch }}.tar.gz"
+        dest: "/tmp/helm_unarchive"
+        remote_src: yes
+
+    - name: Move Helm binary to target destination (/usr/local/bin/helm)
+      copy:
+        src: "/tmp/helm_unarchive/linux-{{ helm_arch }}/helm"
+        dest: "{{ helm_bin_path | default('/usr/local/bin/helm') }}"
+        remote_src: yes
+        mode: '0755'
+
+    - name: Clean up temporary Helm installation files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "/tmp/helm-{{ helm_ver }}-linux-{{ helm_arch }}.tar.gz"
+        - "/tmp/helm_unarchive"
+
 # 4.2 Add Cilium Helm Repository
 - name: Add Cilium Helm Repository
   kubernetes.core.helm_repository:
@@ -88,6 +128,7 @@
     name: cilium
     chart_ref: "{{ cilium_helm_repo_name }}/cilium"
     release_namespace: kube-system
+    chart_version: "{{ cilium_chart_version | default(omit) }}"
     binary_path: "{{ helm_bin_path }}"
     values:
       # Configure eBPF to Manage Service Transmission and Load Balancing without Kube-proxy
@@ -98,6 +139,7 @@
       routingMode: "native"
       autoDirectNodeRoutes: true
       ipv4NativeRoutingCIDR: "{{ pod_network_cidr }}"
+      ipv6NativeRoutingCIDR: "fd00::/104"
       # IPAM Configuration
       ipam:
         mode: "cluster-pool"

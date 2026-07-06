@@ -30,12 +30,6 @@
   roles:
     - helm
 
-- name: 1.5 Install Cilium CNI
-  hosts: master
-  become: yes
-  roles:
-    - cilium 
-
 # ===============================================
 # Phase 2: NFS Storage Infrastructure Provisioning
 # ===============================================
