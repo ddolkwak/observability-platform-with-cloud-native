@@ -84,7 +84,7 @@
 
 # 4.3 Install Cilium CNI (Strict Mode)
 - name: Install Cilium CNI via Helm (Strict Mode)
-  helm:
+  kubernetes.core.helm:
     name: cilium
     chart_ref: "{{ cilium_helm_repo_name }}/cilium"
     release_namespace: kube-system
