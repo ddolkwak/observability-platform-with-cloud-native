@@ -1,0 +1,25 @@
+---
+# host_kernel_update
+- name: Linux Kernel 6.8(HWE) Upgrade for all nodes
+  hosts: 
+    - master
+    - workers
+  become: true
+  tasks:
+    - name: Ubuntu 22.04 HWE Kernel(6.8) Package Installation
+      apt:
+        name: linux-generic-hwe-22.04
+        state: latest
+        update_cache: yes
+        dpkg_options: 'force-confdef,force-confold'
+      environment:
+        DEBIAN_FRONTEND: noninteractive 
+      register: kernel_update
+
+    - name: Apply and Reboot Cluster Nodes
+      reboot:
+        msg: "Reboot Cluster for Applying Kernel Version Changes."
+        connect_timeout: 5
+        reboot_timeout: 300
+        pre_reboot_delay: 2
+      when: kernel_update.changed
