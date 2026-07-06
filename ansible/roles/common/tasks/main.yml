@@ -1,6 +1,6 @@
 ---
 # tasks file for common
-# 1. Swap 메모리 즉시 끄기 및 영구 비활성화
+# 1. Disable Swap Permenently
 - name: Disable swap immediately
   command: swapoff -a
   when: ansible_swaptotal_mb > 0
@@ -11,7 +11,7 @@
     regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
     replace: '# \1'
 
-# 2. 커널 모듈 로드
+# 2. Load Kernel Modules
 - name: Load kernel modules for k8s immediately
   modprobe:
     name: "{{ item }}"
@@ -19,16 +19,20 @@
   loop:
     - overlay
     - br_netfilter
+    - vxlan
+    - geneve
 
 - name: Create modules-load.d configuration file for K8s
   copy:
     content: |
       overlay
       br_netfilter
+      vxlan
+      geneve
     dest: /etc/modules-load.d/k8s.conf
     mode: '0644'
 
-# 3. K8s 네트워킹을 위한 sysctl 파라미터 적용
+# 3. Set sysctl parameters for K8s Networking
 - name: Set sysctl parameters for K8s
   sysctl:
     name: "{{ item.name }}"
@@ -40,7 +44,7 @@
     - { name: 'net.bridge.bridge-nf-call-iptables', value: '1' }
     - { name: 'net.bridge.bridge-nf-call-ip6tables', value: '1' }
 
-# 4. Ubuntu firewall(UFW) 해제
+# 4. Disable Ubuntu Firewall(UFW)
 - name: 2. Disable UFW Firewall
   systemd:
     name: ufw
@@ -48,21 +52,21 @@
     enabled: false
   ignore_errors: true
 
-# 5. 필수 패키지 설치
+# 5. Prerequisite Packages Installation
 - name: Install prerequisite packages
   apt:
     name: "{{ common_prereq_packages }}"
     state: present
     update_cache: yes
 
-# 6. GPG Keyrings 디렉토리 생성
+# 6. Create GPG Keyrings Directory
 - name: Create keyrings directory
   file:
     path: /etc/apt/keyrings
     state: directory
     mode: '0755'
 
-# 7. CRI-O 저장소 세팅
+# 7. CRI-O Repo Settings
 - name: Download CRI-O GPG key
   get_url:
     url: "{{ crio_repo_base_url }}/Release.key"
@@ -79,7 +83,7 @@
     state: present
     filename: cri-o
 
-# 8. K8s 저장소 세팅
+# 8. K8s Repo Settings
 - name: Download K8s GPG key
   get_url:
     url: "{{ k8s_repo_base_url }}/Release.key"
@@ -96,7 +100,7 @@
     state: present
     filename: kubernetes
 
-# 9. 의존성 패키지 및 K8s 컴포넌트 설치
+# 9. Dependency/K8s Components Installation
 - name: Install K8s dependencies and core components
   apt:
     name: "{{ common_k8s_dependencies + common_k8s_packages }}"
@@ -106,14 +110,14 @@
 - name: Prevent K8s packages from being upgraded automatically
   command: "apt-mark hold {{ common_k8s_packages | join(' ') }}"
 
-# 10. CRI-O 서비스 활성화 및 시작
+# 10. Enable CRI-O Service
 - name: Enable and start CRI-O service
   service:
     name: crio
     state: restarted
     enabled: no
 
-# 11. 다중 네트워크 인터페이스 환경을 위한 Node IP 고정 설정
+# 11. Configure Static Node IP
 - name: Configure kubelet node-ip for multi-nic environment
   lineinfile:
     path: /etc/default/kubelet
@@ -121,7 +125,7 @@
     create: yes
   notify: restart_kubelet
 
-# 12. Kubelet 서비스 자동 활성화 해제(shutdown/startup 플레이북 동작 목적)
+# 12. Disable Kubelet(for shutdown/startup playbooks)
 - name: Disable kubelet autostart on boot
   service:
     name: kubelet
