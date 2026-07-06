@@ -23,22 +23,19 @@
         state: started
         enabled: yes
 
-# Enable This Task After CNI(Cilium) Installation
-#    - name: Wait for master node to be Ready
-#      command: kubectl wait --for=condition=Ready node/{{ node_name }} --timeout=120s
-#      environment:
-#        KUBECONFIG: "{{ kubeconfig_path }}"
+    # Wait Until Port 6443 is Started
+    - name: Wait for Kubernetes API Server port to be open
+      wait_for:
+        host: 127.0.0.1
+        port: 6443
+        state: started
+        delay: 5
+        timeout: 120
 
-# Delete This Task After CNI(Cilium) Installation - Temp Task                                                                                                   
-    - name: Wait for Kubernetes API server to be up                                                                                                             
-      command: kubectl get nodes                                                                                                                                
-      environment:                                                                                                                                              
-        KUBECONFIG: "{{ kubeconfig_path }}"                                                                                                                     
-      register: api_status                                                                                                                                      
-      until: api_status.rc == 0                                                                                                                                 
-      retries: 24      # 5s for 24 times = 120s                                                                                                                 
-      delay: 5                                                                                                                                                  
-      changed_when: false  
+    - name: Wait for master node to be Ready
+      command: kubectl wait --for=condition=Ready node/{{ node_name }} --timeout=120s
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
 
     - name: Uncordon the master node
       command: kubectl uncordon {{ node_name }}
@@ -69,12 +66,11 @@
         state: started
         enabled: yes
 
-# Enable This Task After CNI(Cilium) Installation
-#    - name: Wait for worker node to be Ready
-#      command: kubectl wait --for=condition=Ready node/{{ node_name }} --timeout=120s
-#      environment:
-#        KUBECONFIG: "{{ kubeconfig_path }}"
-#      delegate_to: "{{ groups['master'][0] }}"
+    - name: Wait for worker node to be Ready
+      command: kubectl wait --for=condition=Ready node/{{ node_name }} --timeout=120s
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      delegate_to: "{{ groups['master'][0] }}"
 
     - name: Uncordon the worker node
       command: kubectl uncordon {{ node_name }}
