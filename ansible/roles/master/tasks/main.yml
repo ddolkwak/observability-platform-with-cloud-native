@@ -1,8 +1,8 @@
 ---
 # tasks file for master
-# 1. Init Kubeadm
+# 1. Init Kubeadm (Excluded Kube-proxy for Cilium Installation)
 - name: Initialize Kubernetes cluster
-  command: kubeadm init --apiserver-advertise-address=192.168.56.130 --pod-network-cidr=10.244.0.0/16
+  command: kubeadm init --apiserver-advertise-address=192.168.56.130 --pod-network-cidr=172.20.0.0/16 --skip-phases=addon/kube-proxy
   args:
     creates: /etc/kubernetes/admin.conf
 
@@ -37,7 +37,7 @@
     dest: /root/.kube/config
     state: link
 
-- name: Add Alias K(Kubectl) on Admin
+- name: Add Alias K(Kubectl) on Admin User
   lineinfile:
     path: /home/admin/.bashrc
     line: "alias k='kubectl'"
@@ -46,10 +46,75 @@
     group: admin
     mode: '0644'
 
-# 4. Install Flannel CNI Network Plugin
-#- name: Install Flannel Pod Network
-#  command: kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
-#  become_user: admin
+- name: Wait for Kubernetes API Server to become ready
+  wait_for:
+    host: "{{ master_node_ip }}"
+    port: 6443
+    state: started
+    delay: 10
+    timeout: 300
+
+# 4. Install Cilium CLI & CNI
+# 4.1 Install Cilium CLI
+- name: Get Cilium CLI stable version
+  uri:
+    url: https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt
+    return_content: yes
+  register: cilium_cli_stable_version
+
+- name: Set Cilium CLI facts
+  set_fact:
+    cilium_cli_ver: "{{ cilium_cli_stable_version.content | trim }}"
+    # Mapping Rules : Select 'arm64' Package If Master Node Use x86_64 Architecture
+    cilium_cli_arch: "{{ 'amd64' if ansible_architecture == 'x86_64' else 'arm64' if ansible_architecture == 'aarch64' else 'amd64' }}"
+
+- name: Download and Install Cilium CLI
+  unarchive:
+    src: "https://github.com/cilium/cilium-cli/releases/download/{{ cilium_cli_ver }}/cilium-linux-{{ cilium_cli_arch }}.tar.gz"
+    dest: /usr/local/bin
+    remote_src: yes
+    mode: '0755'
+
+# 4.2 Add Cilium Helm Repository
+- name: Add Cilium Helm Repository
+  kubernetes.core.helm_repository:
+    name: "{{ cilium_helm_repo_name }}"
+    repo_url: "{{ cilium_helm_repo_url }}"
+    binary_path: "{{ helm_bin_path }}"
+
+# 4.3 Install Cilium CNI (Strict Mode)
+- name: Install Cilium CNI via Helm (Strict Mode)
+  helm:
+    name: cilium
+    chart_ref: "{{ cilium_helm_repo_name }}/cilium"
+    release_namespace: kube-system
+    binary_path: "{{ helm_bin_path }}"
+    values:
+      # Configure eBPF to Manage Service Transmission and Load Balancing without Kube-proxy
+      kubeProxyReplacement: "true"
+      k8sServiceHost: "{{ master_node_ip }}"
+      k8sServicePort: "{{ k8s_service_port }}"
+      # Native Routing Option
+      routingMode: "native"
+      autoDirectNodeRoutes: true
+      ipv4NativeRoutingCIDR: "{{ pod_network_cidr }}"
+      # IPAM Configuration
+      ipam:
+        mode: "cluster-pool"
+        operator:
+          clusterPoolIPv4PodCIDRList:
+            - "{{ pod_network_cidr }}"
+      # Kernel Acceleration Settings
+      endpointRoutes:
+        enabled: true
+      installNoConntrackIptablesRules: true
+      bpf:
+        masquerade: true
+      ipv6:
+        enabled: true
+      # Assign Single-Operator Structure (for Reducing VM RAM Capacity)
+      operator:
+        replicas: 1
 
 # 5. Extract Join Command (for Worker Join)
 - name: Generate and Delegate Join Command

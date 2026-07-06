@@ -1,16 +1,36 @@
 ---
 # Global Variables
 
+# ========================================================================
+# [1] : Kubernetes Global Variables
+# ========================================================================
 # Kubernetes Version 
 kubernetes_version: "v1.30"
 
+# Kubernetes Network Settings
+master_node_ip: "192.168.56.130"
+pod_network_cidr: "172.20.0.0/16"
+k8s_service_port: "6443"
+
+# Kubernetes System User Settings
+k8s_admin_user: "admin"
+
+# ========================================================================
+# [2] : Container Runtime Global Variables
+# ========================================================================
 # Container Runtime Version
 crio_version: "v1.30"
 
+# ========================================================================
+# [3] : Helm Global Variables
+# ========================================================================
 # Helm Version
 helm_version: "v3.20.2"
 helm_bin_path: "/usr/local/bin/helm"
 
+# ========================================================================
+# [4] : NFS Global Variables
+# ========================================================================
 # NFS Infrastrcuture & Network Settings
 nfs_server_ip: "192.168.56.133"
 nfs_shared_path: "/srv/nfs_shared/kubernetes"

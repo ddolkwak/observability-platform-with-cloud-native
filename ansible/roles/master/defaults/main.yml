@@ -1,2 +1,5 @@
 ---
 # defaults file for master
+# Cilium CNI Settings
+cilium_helm_repo_name: "cilium"
+cilium_helm_repo_url: "https://helm.cilium.io/"
