@@ -17,7 +17,7 @@ this project validates the **architecture, efficiency, and reliability** of an e
 
 * **Objectives** : _Move beyond traditional monitoring architectures and resource-heavy sidecar proxies to establish **a global-standard OpenTelemetry (OTel) telemetry pipeline**. Leverage kernel-level Cilium CNI to seamlessly observe and control microservice network topologies and metrics within a virtualized environment._
 * **Duration** : _4 Weeks_
-* **Project Management** : [Jira Dashboard](https://ddolkwakpro.atlassian.net/jira/software/projects/OPWCN/boards/2)
+* **Project Management** : [Jira Dashboard](https://ddolkwakpro.atlassian.net/jira/software/projects/OPDWCN/boards/3)
 * **Key Features** :
     * **Strict Resource Optimization** : _Custom-tuned an Upstream (Vanilla) Kubernetes cluster to maximize efficiency within a highly constrained 9GB RAM budget, engineered for a 16GB laptop environment where the Host OS natively consumes 6GB._
     * **Lightweight Container Runtime** : _Implemented CRI-O as the dedicated container runtime to minimize daemon overhead and resource footprint._
@@ -25,7 +25,7 @@ this project validates the **architecture, efficiency, and reliability** of an e
 
 ---
 ### System Architecture
-![alt text](Architecture.png)
+![alt text](Architecture-1.png)
 
 ---
 ### Core Technical Stack
