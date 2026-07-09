@@ -146,6 +146,19 @@
       routingMode: "native"
       autoDirectNodeRoutes: true
       ipv4NativeRoutingCIDR: "{{ pod_network_cidr }}"
+      # XDP LoadBalancer Acceleration
+      loadBalancer:
+        mode: "xdp"
+      xdp:
+        mode: "native"
+      installNoConntrackIptablesRules: true
+      # eBPF Host Routing Activation (Kernel Routing Stack Bypass)
+      bpf:
+        masquerade: true
+        hostRouting: true
+      # Socket Layer Acceleration Settings
+      sockops:
+        enabled: true
       # IPAM Configuration
       ipam:
         mode: "cluster-pool"
@@ -156,8 +169,6 @@
       endpointRoutes:
         enabled: true
       installNoConntrackIptablesRules: true
-      bpf:
-        masquerade: true
       ipv6:
         enabled: false
       # Assign Single-Operator Structure (for Reducing VM RAM Capacity)
