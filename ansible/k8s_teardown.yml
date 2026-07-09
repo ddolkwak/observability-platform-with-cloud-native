@@ -1,0 +1,67 @@
+---
+# k8s_teardown.yml file
+- name: Teardown Kubernetes Cluster and Cilium CNI
+  hosts: master, workers
+  become: true
+  gather_facts: false
+
+  tasks:
+    # -----------------------------------------------------------------
+    # [1] Kubeadm Force Reset
+    # -----------------------------------------------------------------
+    - name: Run kubeadm reset force
+      command: kubeadm reset -f
+      failed_when: false
+
+    # -----------------------------------------------------------------
+    # [2] Stop Kubernetes & Container Runtime
+    # -----------------------------------------------------------------
+    - name: Stop Kubernetes and CRI-O services
+      systemd:
+        name: "{{ item }}"
+        state: stopped
+        enabled: false
+      loop:
+        - kubelet
+        - crio
+      failed_when: false
+
+    # -----------------------------------------------------------------
+    # [3] Clean Up Filesystem
+    # -----------------------------------------------------------------
+    - name: Remove Kubernetes and CNI configuration directories
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/kubernetes/
+        - /var/lib/kubelet/
+        - /var/lib/etcd/
+        - /var/lib/cni/
+        - /etc/cni/net.d/
+        - /root/.kube/
+        - "/home/{{ k8s_admin_user | default('admin') }}/.kube/"
+
+    # -----------------------------------------------------------------
+    # [4] Clean Up Cilium eBPF Filesystem & Network Interface
+    # -----------------------------------------------------------------
+    - name: Unmount Cilium BPF filesystem if mounted
+      mount:
+        path: /sys/fs/bpf
+        state: unmounted
+      failed_when: false
+
+    - name: Remove Cilium state directories
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /var/run/cilium/
+        - /sys/fs/bpf/cilium/
+
+    # -----------------------------------------------------------------
+    # [5] Reboot Node
+    # -----------------------------------------------------------------
+    - name: Reboot all nodes to completely flush kernel memory and eBPF maps
+      reboot:
+        reboot_timeout: 300

@@ -10,6 +10,8 @@ Vagrant.configure("2") do |config|
     vb.gui = false
     vb.linked_clone = true
     vb.customize ["modifyvm", :id, "--nested-hw-virt", "on"]
+    vb.customize ["modifyvm", :id, "--nictype1", "virtio"] # Adapter 1 (Vagrant Default NAT)
+    vb.customize ["modifyvm", :id, "--nictype2", "virtio"] # Adapter 2 (K8s Host-only Network)
   end
 
   # =========================================================
@@ -94,7 +96,7 @@ EOF
       vb.cpus = 1
     end
 
-    # [Shared Folder Settings (for Github Connection)
+    # [Shared Folder Settings (for Github Connection)]
     ansible.vm.synced_folder "./ansible", "/home/admin/ansible",
       owner: 1234,
       group: "admin",
