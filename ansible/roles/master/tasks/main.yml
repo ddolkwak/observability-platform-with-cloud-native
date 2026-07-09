@@ -146,12 +146,6 @@
       routingMode: "native"
       autoDirectNodeRoutes: true
       ipv4NativeRoutingCIDR: "{{ pod_network_cidr }}"
-      # XDP LoadBalancer Acceleration Settings
-      loadBalancer:
-        mode: "xdp"
-      xdp:
-        mode: "native"
-      installNoConntrackIptablesRules: true
       # eBPF Host Routing Activation Settings (Kernel Routing Stack Bypass)
       bpf:
         masquerade: true
