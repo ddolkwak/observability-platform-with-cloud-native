@@ -21,6 +21,11 @@
     - br_netfilter
     - vxlan
     - geneve
+    - cls_bpf
+    - sch_ingress
+    - act_bpf
+    - xt_bpf
+    - crypto_user_api_hash
 
 - name: Create modules-load.d configuration file for K8s
   copy:
@@ -29,6 +34,11 @@
       br_netfilter
       vxlan
       geneve
+      cls_bpf
+      sch_ingress
+      act_bpf
+      xt_bpf
+      crypto_user_api_hash
     dest: /etc/modules-load.d/k8s.conf
     mode: '0644'
 
