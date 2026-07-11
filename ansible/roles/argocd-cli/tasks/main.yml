@@ -1,0 +1,42 @@
+---
+# tasks file for argocd-cli
+- name: Setup kubeconfig Directory from Master node
+  ansible.builtin.file:
+    path: "~/.kube"
+    state: directory
+    mode: '0755'
+
+- name: Master-Control Plane Kubeconfig Sync
+  ansible.builtin.fetch:
+    src: "{{ kubeconfig_path }}"
+    dest: "~/.kube/config"
+    flat: true
+  delegate_to: "{{ groups['master'][0] }}"
+  become: true
+  ignore_errors: true
+
+- name: Download ArgoCD CLI Binary
+  ansible.builtin.get_url:
+    url: "https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64"
+    dest: "/tmp/argocd"
+    mode: '0755'
+
+- name: Copy ArgoCD CLI Binary to System Path
+  ansible.builtin.copy:
+    src: "/tmp/argocd"
+    dest: "/usr/local/bin/argocd"
+    mode: '0755'
+    remote_src: true
+  become: true
+
+- name: Cleanup Temp ArgoCD Files
+  ansible.builtin.file:
+    path: "/tmp/argocd"
+    state: absent
+
+- name: Add Alias for Command Line Convenience
+  ansible.builtin.lineinfile:
+    path: "~/.bashrc"
+    line: "alias argocore='argocd --core'"
+    create: true
+    state: present
