@@ -7,6 +7,9 @@
 # Kubernetes Version 
 kubernetes_version: "v1.30"
 
+# Kubeconfig Path
+kubeconfig_path: "/etc/kubernetes/admin.conf"
+
 # Kubernetes Network Settings
 master_node_ip: "192.168.56.130"
 pod_network_cidr: "172.20.0.0/16"

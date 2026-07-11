@@ -1,7 +1,9 @@
 ---
 # k8s_teardown.yml file
 - name: Teardown Kubernetes Cluster and Cilium CNI
-  hosts: master, workers
+  hosts:
+    - master
+    - workers
   become: true
   gather_facts: false
 

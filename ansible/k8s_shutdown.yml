@@ -6,20 +6,17 @@
 - name: Graceful Shutdown for Worker Nodes
   hosts: workers
   become: yes
-  vars:
-    node_name: "{{ inventory_hostname }}"
-    kubeconfig_path: "/etc/kubernetes/admin.conf"
 
   tasks:
     - name: Cordon the worker node
-      command: kubectl cordon {{ node_name }}
+      command: kubectl cordon {{ inventory_hostname }}
       environment:
         KUBECONFIG: "{{ kubeconfig_path }}"
       delegate_to: "{{ groups['master'][0] }}"
 
     - name: Drain the worker node
       command: >
-        kubectl drain {{ node_name }}
+        kubectl drain {{ inventory_hostname }}
         --ignore-daemonsets
         --delete-emptydir-data
         --force
@@ -50,19 +47,16 @@
 - name: Graceful Shutdown for Master Node
   hosts: master
   become: yes
-  vars:
-    node_name: "{{ inventory_hostname }}"
-    kubeconfig_path: "/etc/kubernetes/admin.conf"
 
   tasks:
     - name: Cordon the master node
-      command: kubectl cordon {{ node_name }}
+      command: kubectl cordon {{ inventory_hostname }}
       environment:
         KUBECONFIG: "{{ kubeconfig_path }}"
 
     - name: Drain the master node
       command: >
-        kubectl drain {{ node_name }}
+        kubectl drain {{ inventory_hostname }}
         --ignore-daemonsets
         --delete-emptydir-data
         --force
