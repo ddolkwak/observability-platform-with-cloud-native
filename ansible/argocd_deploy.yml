@@ -1,13 +1,9 @@
 ---
 # Tasks for ArgoCD Core Deployment
-- name: "[1] Lightweight ArgoCD Core Deployment"
-  hosts: master
-  become: true
-  roles:
-    - argocd-core
-
-- name: "[2] ArgoCD CLI Optimization"
+- name: Deploy Argo CD Core and Install CLI
   hosts: localhost
   connection: local
+  gather_facts: true
   roles:
-    - argocd-cli
+    - role: argocd-core
+    - role: argocd-cli
