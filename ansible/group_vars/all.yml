@@ -41,3 +41,11 @@ nfs_network_range: "192.168.56.0/24"
 
 # NFS Provisioner Settings
 storage_class_name: "nfs-storage"
+
+# ========================================================================
+# [5] : ArgoCD Core Global Variables
+# ========================================================================
+# ArgoCD Core Versions
+argocd_version: "v2.10.4"
+argocd_namespace: "argocd"
+argocd_cli_bin_path: "/usr/local/bin/argocd"
