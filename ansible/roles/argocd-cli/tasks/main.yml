@@ -1,0 +1,42 @@
+---
+# tasks file for argocd-cli
+- name: Determine OS architecture for Argo CD CLI
+  ansible.builtin.set_fact:
+    os_arch: >-
+      {%- if ansible_architecture == 'x86_64' -%}amd64
+      {%- elif ansible_architecture == 'aarch64' -%}arm64
+      {%- else -%}{{ ansible_architecture }}
+      {%- endif -%}
+
+- name: Download Argo CD CLI binary
+  become: true
+  ansible.builtin.get_url:
+    url: "https://github.com/argoproj/argo-cd/releases/download/{{ argocd_version }}/argocd-linux-{{ os_arch }}"
+    dest: "{{ argocd_cli_bin_path }}"
+    mode: '0755'
+    owner: root
+    group: root
+
+- name: Copy kubeconfig for Argo CD Core
+  ansible.builtin.copy:
+    src: "{{ kubeconfig_default_path | expanduser }}"
+    dest: "{{ kubeconfig_default_path | expanduser }}-argocd"
+    mode: '0600'
+    remote_src: true
+    force: no  # idempotency
+  register: _copy_kubeconfig
+
+- name: Set default namespace to argocd in the copied kubeconfig
+  ansible.builtin.command:
+    cmd: "kubectl config set-context --current --namespace={{ argocd_namespace }}"
+  environment:
+    KUBECONFIG: "{{ kubeconfig_default_path | expanduser }}-argocd"
+  when: _copy_kubeconfig.changed  
+
+- name: Configure argocore alias in bashrc
+  ansible.builtin.lineinfile:
+    path: "{{ ansible_env.HOME }}/.bashrc"
+    regexp: "^alias argocore="
+    line: "alias argocore='KUBECONFIG={{ kubeconfig_default_path | expanduser }}-argocd argocd --core'"
+    create: true
+    mode: '0644'

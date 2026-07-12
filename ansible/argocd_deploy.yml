@@ -1,0 +1,128 @@
+---
+# Tasks for ArgoCD Core Deployment
+# ==============================================================================
+# [1] Configure Control Node essentials
+# ==============================================================================
+- name: Prepare Ansible Control Node (Swap, Packages, kubectl)
+  hosts: localhost
+  connection: local
+  become: true
+  tasks:
+    # 1. Create and enable 1GB Swap file
+    - name: Check if swapfile exists
+      ansible.builtin.stat:
+        path: /swapfile
+      register: _swapfile_stat
+
+    - name: Create 1GB swapfile
+      ansible.builtin.command: fallocate -l 1G /swapfile
+      when: not _swapfile_stat.stat.exists
+
+    - name: Set permissions for swapfile
+      ansible.builtin.file:
+        path: /swapfile
+        mode: '0600'
+
+    - name: Make swap space on swapfile
+      ansible.builtin.command: mkswap /swapfile
+      when: not _swapfile_stat.stat.exists
+
+    - name: Enable swap
+      ansible.builtin.command: swapon /swapfile
+      register: _swapon_result
+      changed_when: _swapon_result.rc == 0
+      failed_when: _swapon_result.rc != 0 and 'Device or resource busy' not in _swapon_result.stderr
+
+    - name: Add swap to /etc/fstab for persistence
+      ansible.posix.mount:
+        name: none
+        src: /swapfile
+        fstype: swap
+        opts: sw
+        passno: '0'
+        dump: '0'
+        state: present
+
+    # 2. Install required system packages and python modules
+    - name: Install required system packages
+      ansible.builtin.apt:
+        name:
+          - python3-pip
+          - git             # Added for GitOps operations
+          - ca-certificates # For HTTPS download certificates
+        state: present
+        update_cache: yes
+
+    - name: Install kubernetes python module via pip
+      ansible.builtin.pip:
+        name: kubernetes
+        executable: pip3
+        state: present
+
+    # 3. Install kubectl binary
+    - name: Get the latest stable Kubernetes version
+      ansible.builtin.uri:
+        url: https://dl.k8s.io/release/stable.txt
+        return_content: true
+      register: _k8s_version
+
+    - name: Download and install kubectl
+      ansible.builtin.get_url:
+        url: "https://dl.k8s.io/release/{{ _k8s_version.content | trim }}/bin/linux/amd64/kubectl"
+        dest: /usr/local/bin/kubectl
+        mode: '0755'
+        owner: root
+        group: root
+
+    - name: Verify kubectl installation
+      ansible.builtin.command: kubectl version --client
+      changed_when: false
+
+
+# ==============================================================================
+# [2] Fetch Kubeconfig from Master Node (master)
+# ==============================================================================
+- name: Fetch kubeconfig from Kubernetes Master
+  hosts: master  # Master group name in inventory file
+  become: true
+  tasks:
+    - name: Fetch admin.conf to control node
+      ansible.builtin.fetch:
+        src: /etc/kubernetes/admin.conf
+        dest: /tmp/k8s_admin.conf
+        flat: yes
+
+
+# ==============================================================================
+# [3] Configure local Kubeconfig and Deploy ArgoCD
+# ==============================================================================
+- name: Configure Kubeconfig and Deploy ArgoCD
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  
+  # Pre-tasks to configure and verify Kubeconfig before executing roles
+  pre_tasks:
+    - name: Ensure .kube directory exists
+      ansible.builtin.file:
+        path: "{{ ansible_env.HOME }}/.kube"
+        state: directory
+        mode: '0755'
+
+    - name: Move and secure kubeconfig
+      ansible.builtin.copy:
+        src: /tmp/k8s_admin.conf
+        dest: "{{ ansible_env.HOME }}/.kube/config"
+        mode: '0600'
+        remote_src: false
+        owner: "{{ ansible_user_id }}"
+
+    - name: Verify cluster access
+      ansible.builtin.command: kubectl cluster-info
+      register: _cluster_info
+      changed_when: false
+      
+# Execute Argo CD roles if pre-tasks succeed
+  roles:
+    - role: argocd-core
+    - role: argocd-cli

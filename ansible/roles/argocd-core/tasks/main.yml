@@ -1,0 +1,34 @@
+---
+# tasks file for argocd-core
+- name: Ensure Argo CD namespace exists
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_default_path | expanduser }}"
+    name: "{{ argocd_namespace }}"
+    api_version: v1
+    kind: Namespace
+    state: present
+
+- name: Apply Argo CD Core manifests
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_default_path | expanduser }}"
+    state: present
+    namespace: "{{ argocd_namespace }}"
+    src: "https://raw.githubusercontent.com/argoproj/argo-cd/{{ argocd_version }}/manifests/core-install.yaml"
+
+- name: Wait for Argo CD API resources to be created
+  ansible.builtin.command:
+    cmd: "kubectl --kubeconfig {{ kubeconfig_default_path | expanduser }} get pods -n {{ argocd_namespace }}"
+  register: _pod_check
+  until: _pod_check.stdout != ""
+  retries: 12
+  delay: 5
+  changed_when: false
+  
+- name: Wait for all Argo CD pods to become Ready
+  ansible.builtin.command:
+    cmd: "kubectl --kubeconfig {{ kubeconfig_default_path | expanduser }} wait --for=condition=Ready pods --all -n {{ argocd_namespace }} --timeout=60s"
+  register: _pod_wait
+  until: _pod_wait.rc == 0
+  retries: 5
+  delay: 15
+  changed_when: false
