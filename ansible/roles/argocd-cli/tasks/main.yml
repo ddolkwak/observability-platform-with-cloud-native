@@ -17,10 +17,26 @@
     owner: root
     group: root
 
+- name: Copy kubeconfig for Argo CD Core
+  ansible.builtin.copy:
+    src: "{{ kubeconfig_default_path | expanduser }}"
+    dest: "{{ kubeconfig_default_path | expanduser }}-argocd"
+    mode: '0600'
+    remote_src: true
+    force: no  # idempotency
+  register: _copy_kubeconfig
+
+- name: Set default namespace to argocd in the copied kubeconfig
+  ansible.builtin.command:
+    cmd: "kubectl config set-context --current --namespace={{ argocd_namespace }}"
+  environment:
+    KUBECONFIG: "{{ kubeconfig_default_path | expanduser }}-argocd"
+  when: _copy_kubeconfig.changed  
+
 - name: Configure argocore alias in bashrc
   ansible.builtin.lineinfile:
     path: "{{ ansible_env.HOME }}/.bashrc"
     regexp: "^alias argocore="
-    line: "alias argocore='KUBECONFIG={{ kubeconfig_default_path | expanduser }} argocd --core'"
+    line: "alias argocore='KUBECONFIG={{ kubeconfig_default_path | expanduser }}-argocd argocd --core'"
     create: true
     mode: '0644'
