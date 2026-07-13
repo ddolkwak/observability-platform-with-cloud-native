@@ -36,12 +36,12 @@ helm_bin_path: "/usr/local/bin/helm"
 # [4] : NFS Global Variables
 # ========================================================================
 # NFS Infrastrcuture & Network Settings
-nfs_server_ip: "192.168.56.133"
-nfs_shared_path: "/srv/nfs_shared/kubernetes"
-nfs_network_range: "192.168.56.0/24"
+# nfs_server_ip: "192.168.56.133"
+# nfs_shared_path: "/srv/nfs_shared/kubernetes"
+# nfs_network_range: "192.168.56.0/24"
 
 # NFS Provisioner Settings
-storage_class_name: "nfs-storage"
+#storage_class_name: "nfs-storage"
 
 # ========================================================================
 # [5] : ArgoCD Core Global Variables
