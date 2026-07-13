@@ -29,20 +29,3 @@
   become: yes
   roles:
     - helm
-
-# ===============================================
-# Phase 2: NFS Storage Infrastructure Provisioning
-# ===============================================
-- name: 2.1 Deploy NFS Dynamic Provisioner
-  hosts: master
-  become: yes
-  roles:
-    - nfs-provisioner
-
-# ===============================================
-# Phase 3: Postgres Database Deployment
-# ===============================================
-- name: 3.1 Deploy Postgres Database
-  hosts: master
-  roles:
-    - postgres
