@@ -55,5 +55,5 @@ argocd_cli_bin_path: "/usr/local/bin/argocd"
 # [6] : MetalLB Global Variables                                                
 # ========================================================================          
 # MetalLB Allocatable IP Range
-metallb_ip_range: 
+metallb_ip_pools: 
   - "192.168.56.200-192.168.56.220" 

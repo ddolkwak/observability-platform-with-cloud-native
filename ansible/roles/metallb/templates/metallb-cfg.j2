@@ -2,7 +2,7 @@ apiVersion: metallb.io/v1beta1
 kind: IPAddressPool
 metadata:
   name: ip-address-pool
-  namespace: {{ metallb-namespace }}
+  namespace: {{ metallb_namespace }}
 spec:
   addresses:
 {% for ip_range in metallb_ip_pools %}
