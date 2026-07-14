@@ -172,6 +172,11 @@
       # Assign Single-Operator Structure (for Reducing VM RAM Capacity)
       operator:
         replicas: 1
+      # MetalLB LoadBalancer Prerequisite Settings
+      l2announcements:
+        enabled: true
+      externalIPs:
+        enabled: true
 
 # 5. Extract Join Command (for Worker Join)
 - name: Generate and Delegate Join Command

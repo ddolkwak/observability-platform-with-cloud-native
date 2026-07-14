@@ -29,3 +29,9 @@
   become: yes
   roles:
     - helm
+
+- name: 1.5 Install MetalLB
+  hosts: master
+  become: yes
+  roles:
+    - metallb

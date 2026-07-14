@@ -1,0 +1,35 @@
+---
+# tasks file for metallb
+- name: MetalLB Installation and Configuration
+  block:
+    - name: Install MetalLB Native Manifest
+      command: kubectl apply -f {{ metallb_manifest_url }}
+      register: metallb_install
+      changed_when: "'created' in metallb_install.stdout or 'configured' in metallb_install.stdout"
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+
+    - name: Wait for MetalLB components to be ready
+      command: >
+        kubectl wait --namespace {{ metallb_namespace }}
+        --for=condition=ready pod
+        --selector=app=metallb
+        --timeout=120s
+      changed_when: false
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+
+    - name: Generate and Apply MetalLB Configuration (CRD based)
+      block:
+        - name: Template MetalLB Config file (IPAddressPool & L2Advertisement)
+          template:
+            src: metallb-cfg.j2
+            dest: "/tmp/metallb-cfg.yml"
+
+        - name: Apply MetalLB CRDs to Cluster
+          command: kubectl apply -f /tmp/metallb-cfg.yml
+          register: metallb_config_apply
+          changed_when: "'created' in metallb_config_apply.stdout or 'configured' in metallb_config_apply.stdout"
+          environment:
+            KUBECONFIG: "{{ kubeconfig_path }}"
+  when: inventory_hostname in groups['master']
