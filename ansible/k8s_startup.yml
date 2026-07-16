@@ -29,13 +29,13 @@
         delay: 5
         timeout: 120
 
-    - name: Wait for master node to be Ready
-      command: kubectl wait --for=condition=Ready node/{{ inventory_hostname }} --timeout=120s
+    - name: Uncordon the master node
+      command: kubectl uncordon {{ inventory_hostname }}
       environment:
         KUBECONFIG: "{{ kubeconfig_path }}"
 
-    - name: Uncordon the master node
-      command: kubectl uncordon {{ inventory_hostname }}
+    - name: Wait for master node to be Ready
+      command: kubectl wait --for=condition=Ready node/{{ inventory_hostname }} --timeout=120s
       environment:
         KUBECONFIG: "{{ kubeconfig_path }}"
 
@@ -60,21 +60,21 @@
         state: started
         enabled: yes
 
-    - name: Wait for worker node to be Ready
-      command: kubectl wait --for=condition=Ready node/{{ inventory_hostname }} --timeout=120s
-      environment:
-        KUBECONFIG: "{{ kubeconfig_path }}"
-      delegate_to: "{{ groups['master'][0] }}"
-
     - name: Uncordon the worker node
       command: kubectl uncordon {{ inventory_hostname }}
       environment:
         KUBECONFIG: "{{ kubeconfig_path }}"
       delegate_to: "{{ groups['master'][0] }}"
 
+    - name: Wait for worker node to be Ready
+      command: kubectl wait --for=condition=Ready node/{{ inventory_hostname }} --timeout=120s
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      delegate_to: "{{ groups['master'][0] }}"
+
 
 # ==========================================
-# [3] : Reset Cilium Pods Restart Count
+# [3] : Reset Cilium & MetalLB Pods Restart Count
 # ==========================================
 - name: Restart Cilium DaemonSets to Clear Restart Counts
   hosts: master
@@ -82,10 +82,11 @@
 
   tasks:
     # Wait Until All Nodes to be Uncordoned
-    - name: Pause for 10 seconds before restarting Cilium
+    - name: Pause for 10 seconds before restarting DaemonSets
       pause:
         seconds: 10
 
+    # Rollout Phase (Cilium)
     - name: Rollout restart ds/cilium
       command: kubectl rollout restart ds/cilium -n kube-system
       environment:
@@ -96,6 +97,12 @@
       environment:
         KUBECONFIG: "{{ kubeconfig_path }}"
 
+    # Rollout Phase (MetalLB)
+    - name: Rollout restart ds/speaker (MetalLB)
+      command: kubectl rollout restart ds/speaker -n metallb-system
+      environment:
+          KUBECONFIG: "{{ kubeconfig_path }}"
+
     # Wait Until All Cilium Pods to be Ready
     - name: Wait for Cilium rollout to complete
       command: kubectl rollout status ds/cilium -n kube-system --timeout=120s
@@ -104,5 +111,11 @@
 
     - name: Wait for Cilium Envoy rollout to complete
       command: kubectl rollout status ds/cilium-envoy -n kube-system --timeout=120s
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+
+    # Wait Until All MetalLB Speaker Pods to be Ready
+    - name: Wait for MetalLB Speaker rollout to complete
+      command: kubectl rollout status ds/speaker -n metallb-system --timeout=120s
       environment:
         KUBECONFIG: "{{ kubeconfig_path }}"
