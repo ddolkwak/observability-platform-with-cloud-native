@@ -1,6 +1,5 @@
 # [Project] Building a Next-Generation Cloud-Native Infrastructure & Observability Platform Based on eBPF (Cilium) and OpenTelemetry
 
----
 ## Notice
 **This project was driven by my natural curiosity and a strong commitment to continuous upskilling. Please note that certain details or scopes may be subject to modification or adjustment as the project progresses.**
 
@@ -18,23 +17,29 @@ this project validates the **architecture, efficiency, and reliability** of an e
 * **Objectives** : _Move beyond traditional monitoring architectures and resource-heavy sidecar proxies to establish **a global-standard OpenTelemetry (OTel) telemetry pipeline**. Leverage kernel-level Cilium CNI to seamlessly observe and control microservice network topologies and metrics within a virtualized environment._
 * **Duration** : _4 Weeks_
 * **Project Management** : [Jira Dashboard](https://ddolkwakpro.atlassian.net/jira/software/projects/OPDWCN/boards/3)
+* **Investigation&Study** : [Velog.io/@daankwak/posts](https://velog.io/@daankwak/posts)
 * **Key Features** :
     * **Strict Resource Optimization** : _Custom-tuned an Upstream (Vanilla) Kubernetes cluster to maximize efficiency within a highly constrained 9GB RAM budget, engineered for a 16GB laptop environment where the Host OS natively consumes 6GB._
     * **Lightweight Container Runtime** : _Implemented CRI-O as the dedicated container runtime to minimize daemon overhead and resource footprint._
     * **Declarative Infrastructure** : _Managed the entire ecosystem utilizing GitOps principles to ensure fully automated, auditable, and declarative infrastructure lifecycle management._
-
 ---
 ### System Architecture
 ![alt text](Architecture-1.png)
 
+### Cluster Provisioning
+![alt text](<infra provisioning.png>)
+
+### GitOps Infrastructure
+![alt text](<Gitops infrastructure.png>)
+
 ---
 ### Core Technical Stack
-* **Infrastructure/IaC** : Ansible, VirtualBox, Ubuntu(CLI-only)
-* **Orchestration/Runtime** : Upstream K8s (kubeadm), CRI-O, Local Path Provisioner
-* **Networking/eBPF** : Cilium CNI (eBPF), Hubble, Helm
-* **GitOps/CD** : ArgoCD Core, GitHub
-* **Application/DB** : Java Spring Boot, PostgreSQL
-* **Observability** : OpenTelemetry Collector, Prometheus, Grafana
+* **Infrastructure/IaC** : _Ansible, VirtualBox, Ubuntu(CLI-only)_
+* **Orchestration/Runtime** : _Upstream K8s (kubeadm), CRI-O, Local Path Provisioner_
+* **Networking/eBPF** : _Cilium CNI (eBPF), Hubble, Helm_
+* **GitOps/CD** : _ArgoCD Core, GitHub_
+* **Application/DB** : _Java Spring Boot, PostgreSQL_
+* **Observability** : _OpenTelemetry Collector, Prometheus, Grafana_
 
 ---
 ### Targets
