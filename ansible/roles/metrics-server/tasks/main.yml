@@ -1,0 +1,28 @@
+---
+# tasks file for metrics-server
+- name: 1. Apply Official Metrics Server Manifest
+  ansible.builtin.command: >
+    kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/{{ metrics_server_version }}/components.yaml
+  register: metrics_server_apply
+  changed_when: "'created' in metrics_server_apply.stdout or 'configured' in metrics_server_apply.stdout"
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+
+- name: 2. Patch Metrics Server for Kubeadm (Insecure TLS)
+  ansible.builtin.command: >
+    kubectl patch deployment metrics-server -n kube-system --type='json'
+    -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--kubelet-insecure-tls"}]'
+  register: patch_result
+  changed_when: "'patched' in patch_result.stdout"
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+
+- name: 3. Wait for Metrics Server Pod to be Ready
+  ansible.builtin.command: >
+    kubectl wait --namespace kube-system
+    --for=condition=ready pod
+    --selector=k8s-app=metrics-server
+    --timeout=120s
+  changed_when: false
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
