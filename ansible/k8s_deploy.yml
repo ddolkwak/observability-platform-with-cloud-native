@@ -35,3 +35,11 @@
   become: yes
   roles:
     - metallb
+
+- name: 1.6 Install Metrics-Server
+  hosts: master
+  become: yes
+  roles:
+    - metrics-server
+  tags:
+    - metrics_server
