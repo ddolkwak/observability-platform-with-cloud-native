@@ -15,6 +15,69 @@
     namespace: "{{ argocd_namespace }}"
     src: "https://raw.githubusercontent.com/argoproj/argo-cd/{{ argocd_version }}/manifests/core-install.yaml"
 
+- name: Patch Argo CD Repo Server Resource Limits
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_default_path | expanduser }}"
+    state: present
+    namespace: "{{ argocd_namespace }}"
+    api_version: apps/v1
+    kind: Deployment
+    name: argocd-repo-server
+    definition:
+      spec:
+        template:
+          spec:
+            containers:
+              - name: argocd-repo-server
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 128Mi
+                  limits:
+                    memory: 256Mi
+
+- name: Patch Argo CD Application Controller Resource Limits
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_default_path | expanduser }}"
+    state: present
+    namespace: "{{ argocd_namespace }}"
+    api_version: apps/v1
+    kind: StatefulSet
+    name: argocd-application-controller
+    definition:
+      spec:
+        template:
+          spec:
+            containers:
+              - name: argocd-application-controller
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 128Mi
+                  limits:
+                    memory: 256Mi
+
+- name: Patch Argo CD Redis Resource Limits
+  kubernetes.core.k8s:
+    kubeconfig: "{{ kubeconfig_default_path | expanduser }}"
+    state: present
+    namespace: "{{ argocd_namespace }}"
+    api_version: apps/v1
+    kind: Deployment
+    name: argocd-redis
+    definition:
+      spec:
+        template:
+          spec:
+            containers:
+              - name: redis
+                resources:
+                  requests:
+                    cpu: 50m
+                    memory: 64Mi
+                  limits:
+                    memory: 128Mi
+
 - name: Wait for Argo CD API resources to be created
   ansible.builtin.command:
     cmd: "kubectl --kubeconfig {{ kubeconfig_default_path | expanduser }} get pods -n {{ argocd_namespace }}"
