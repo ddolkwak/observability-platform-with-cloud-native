@@ -23,7 +23,7 @@ common_k8s_dependencies:
   - socat
   - nfs-common
   - python3-kubernetes
-  - python3-yaml  
+  - python3-yaml
 
 # 4. Repository Default URL
 crio_repo_base_url: "https://pkgs.k8s.io/addons:/cri-o:/stable:/{{ crio_version }}/deb"
