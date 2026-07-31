@@ -19,8 +19,11 @@ _By converging_
 * Kernel-level Networking (eBPF),
 
 _the goal is to build cloud-native architecture and an observability platform within the resource constraints of local host environment._
+
 _1) Move beyond traditional monitoring architectures and resource-intensive sidecar proxy approaches by establishing a global-standard OpenTelemetry (OTel) telemetry pipeline._
+
 _2) Utilize the Cilium CNI with eBPF capabilities to provide kube-proxy-free observability and control over microservice network topologies and metrics._
+
 _3) Applying Strict Resource Optimization, delve into cluster components, connection principles, etc.(Both Kernel-level & application-level)._
 
 ---
