@@ -1,3 +1,5 @@
 *.iso
 *.zip
 *.box
+*.vagrant
+*.pub
