@@ -71,7 +71,7 @@
       until: result.rc == 0
 
     - name: Uncordon ALL worker nodes simultaneously
-      command: kubectl uncordon k8s-worker-1 k8s-worker-2
+      command: kubectl uncordon {{ groups['workers'] | join(' ') }}
       environment:
         KUBECONFIG: "{{ kubeconfig_path }}"
       delegate_to: "{{ groups['master'][0] }}"
