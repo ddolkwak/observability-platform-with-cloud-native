@@ -85,7 +85,7 @@
 
 
 # ==========================================
-# [3] : Reset Cilium & MetalLB Pods Restart Count
+# [3] : Reset Cilium, MetalLB, OTel Collector Pods Restart Count
 # ==========================================
 - name: Restart Cilium DaemonSets to Clear Restart Counts
   hosts: master
@@ -128,5 +128,11 @@
     # Wait Until All MetalLB Speaker Pods to be Ready
     - name: Wait for MetalLB Speaker rollout to complete
       command: kubectl rollout status ds/speaker -n metallb-system --timeout=120s
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+
+    # Wait Until All OpenTelemetry Collector Pods to be Ready
+    - name: Wait for OpenTelemetry Collector rollout to complete
+      command: kubectl rollout status ds/otel-collector -n otel-system --timeout=120s
       environment:
         KUBECONFIG: "{{ kubeconfig_path }}"
