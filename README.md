@@ -159,6 +159,7 @@ For configuring system infrastructure, the following tools should be installed i
 * `VirtualBox` _(v7.2.4)_,
 * `Vagrant` _(v2.4.9)_,
 * _Latest Version of_ `Git`,
+* `Docker Desktop`,
 * and IDE(`VSCodium` or whatever)
 
 `winget` can be used in PowerShell, or Comand Prompt to install the required tools.
@@ -171,6 +172,9 @@ winget install --id Hashicorp.Vagrant --version 2.4.9
 
 # Git (Latest Version) Installation
 winget install --id Git.Git
+
+# Docker Desktop Installation
+winget install --id Docker.DockerDesktop
 
 # VSCodium Installation
 winget install --id VSCodium.VSCodium
@@ -185,15 +189,32 @@ VBoxManage --version
 vagrant --version
 # Check Git version
 git --version
-# Check VSCodium version
-codium --version
+# Check Docker version
+docker --version
 ```
 The expected versions are:
 ```bash
-VirtualBox: 7.2.4
-Vagrant: 2.4.9
-Git: Latest version
+VirtualBox:   7.2.4
+Vagrant:      2.4.9
+Git:          Latest version
+Docker:       Latest version
 ```
+For configuring ArgoCD-based GitOps infrastructure, `Git Repository` has to be opened.
+```bash
+# Open Repository for System Deployment in
+https://github.com/[your_account]
+```
+Plus, Create `GitHub Container Image Registry`, or `ghcr.io` account, to register application contaier images.
+
+_Note: Issue a token for the Repository. This token will be a password for ghcr.io, or GitHub Container Image Registry._
+
+For configuring Monitoring stack, `Grafana Cloud` account has to be prepared.
+```bash
+# For Application Monitoring Stack, Open an Account in
+https://grafana.com/
+```
+_Note: While creating Grafana Cloud Workspace, Keep 3 important correlation informations: `GRAFANA_CLOUD_INSTANCE_ID`, `GRAFANA_CLOUD_API_KEY`, `GRAFANA_CLOUD_OTLP_ENDPOINT`._
+
 
 ### Provisioning VMs
 **1. Create Workspace**
@@ -386,10 +407,54 @@ After prerequisite global variables are all set up, Run Kubernetes deployment pl
 ```bash
 ansible-playbook k8s_deploy.yml
 ```
+
+### ArgoCD Settings (GitOps Pipelining)
 Run ArgoCD deployment playbook to deploy ArgoCD.
 ```bash
 ansible-playbook argocd_deploy.yml
+kubectl get pod -n argocd
 ```
+Ensure **4 Pods** deployed in the `argocd` namespace and in the Running State.
+```bash
+- argocd-application-controller
+- argocd-applicationset-coltroller
+- argocd-redis
+- argocd-repo-server
+```
+Create SSH Key for ArgoCD, using **ed25519** type. The key will be saved in this path: `~/.ssh/[key_name]`
+```bash
+# Generate SSH Key
+ssh-keygen -t ed25519 -C "[email_address]"
+```
+Register the prepared GitHub Repository via this SSH Key. This will make ArgoCD Pod to read the "Cluster desired state" from registered repository, and sync automatically.
+```bash
+argocore repo add git@github.com:your-account/your-repo-name.git --ssh-private-key-path ~/.ssh/id_ed25519
+```
+_Note: `argocore` command is a registered alias while running argocd deployment playbook. `argocore` is `KUBECONFIG=~/.kube/config-argocd argocd --core`._
+
+Verify connection via command below:
+```bash
+argocore repo list
+argocore app list
+```
+
+### Observability Setup
+Create Grafana Cloud Workspace_(via GitHub account is recommended)_, and issue a token.
+While Grafana Cloud Setup, 3 important correlation information need to be prepared:
+* `GRAFANA_CLOUD_INSTANCE_ID`,
+* `GRAFANA_CLOUD_API_KEY`,
+* `GRAFANA_CLOUD_OTLP_ENDPOINT`.
+These information is printed on "Install the OpenTelemetry kube-stack Helm Chart" block.
+
+Create Kubernetes Secrets and deploy, by using following commands:
+```bash
+kubectl create secret generic grafana-auth-secret \
+  --namespace otel-system \
+  --from-literal=instance-id='your-instance-id(7 digits)' \
+  --from-literal=api-key='your-api-key' \
+  --from-literal=endpoint='your-endpoint'
+```
+Connection can be verified by accessing Your Grafana Dashboard.
 
 ### Additional Settings (Troubleshoot)
 
