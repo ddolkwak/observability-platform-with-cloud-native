@@ -1,7 +1,10 @@
 # Next-Generation Cloud-Native Infrastructure & Observability Platform Based on eBPF (Cilium) and OpenTelemetry
 
 ### Overview
-_This is an Infrastructure as Code (IaC) Repository that automatically provisions a Kubernetes-based cluster in a local development environment(with Resource Constraints of 16GB RAM & 250GB disk) using Vagrant and Ansible._
+
+This repository provisions the VM and Kubernetes foundation for a local cloud-native infrastructure and observability platform built with **Vagrant, Ansible, Cilium/eBPF, and OpenTelemetry**. Vagrant defines a four-VM VirtualBox environment with one Ansible control node, one Kubernetes control-plane node, and two workers. Ansible configures the OS, CRI-O runtime, and kubeadm-based cluster, then installs the networking components and ArgoCD Core.
+
+The VMs share a **9 GiB aggregate VM memory budget**. This repository owns VM provisioning and cluster bootstrap; the GitOps repository manages Kubernetes desired state after the initial ArgoCD integration, and the Spring Boot repository owns application source code, builds, and telemetry instrumentation. Together, the three repositories form a platform that collects metrics, logs, and traces and exports them to Grafana Cloud.
 
 **Related Repositories** :
 * **Cluster Infra Provisioning** : _[observability-platform-with-cloud-native.git](https://github.com/ddolkwak/observability-platform-with-cloud-native)_
@@ -13,18 +16,13 @@ _This is an Infrastructure as Code (IaC) Repository that automatically provision
 * **Investigation & Study** : [Velog.io/@daankwak/posts](https://velog.io/@daankwak/posts)
 
 ### Objectives
-_By converging_
-* Infrastructure as Code (IaC)
-* Modern DevOps Observability Standards (OpenTelemetry)
-* Kernel-level Networking (eBPF),
 
-_the goal is to build cloud-native architecture and an observability platform within the resource constraints of local host environment._
+Build a reproducible Kubernetes lab that combines **Infrastructure as Code, GitOps, eBPF networking, and OpenTelemetry** within the local resource budget.
 
-_1) Move beyond traditional monitoring architectures and resource-intensive sidecar proxy approaches by establishing a global-standard OpenTelemetry (OTel) telemetry pipeline._
-
-_2) Utilize the Cilium CNI with eBPF capabilities to provide kube-proxy-free observability and control over microservice network topologies and metrics._
-
-_3) Applying Strict Resource Optimization, delve into cluster components, connection principles, etc.(Both Kernel-level & application-level)._
+1. **Reproduce the infrastructure and define lifecycle boundaries.** Describe VM topology and automate OS/runtime configuration and Kubernetes bootstrap with Vagrant and Ansible, then hand over ongoing Kubernetes resource reconciliation to ArgoCD.
+2. **Validate kube-proxy-free networking.** Configure Cilium native routing and eBPF Service routing with MetalLB L2 advertisement, and investigate compatibility across the Kubernetes, kernel, and virtual NIC layers.
+3. **Support integrated application observability.** Provide the cluster foundation for the GitOps-managed OpenTelemetry Collector and Spring Boot instrumentation, including Kubernetes metadata enrichment and log-to-trace correlation in Grafana Cloud.
+4. **Make resource constraints part of the design.** Evaluate VM memory allocations, component resource policies, and external telemetry backends within the 9 GiB VM budget; investigate failures across subsystem boundaries and verify the resulting changes.
 
 ---
 ### System Architecture
@@ -54,14 +52,16 @@ _3) Applying Strict Resource Optimization, delve into cluster components, connec
 
 ---
 ### Key Features
-* **IaC Automation** : _Automated the entire infrastructure provisioning and Kubernetes bootstrapping process from scratch using Vagrant and Ansible, achieving fully reproducible local environments._
-* **Strict Resource Optimization** : _Custom-tuned OS Kernel, Upstream Kubernetes cluster, JVM Heap Memory, etc. to maximize efficiency within a highly constrained 9GB RAM._
-* **Lightweight Container Runtime** : _Implemented CRI-O as the container runtime, for less resource footprint and fit on Kubernetes API model._
-* **Declarative Infrastructure** : _Managed the entire cluster infra utilizing GitOps principles with ArgoCD and Kustomize to ensure fully automated and declarative infrastructure lifecycle management._
-* **eBPF-powered Advanced Networking** : _Replaced legacy iptables with Cilium (Kube-proxy-less strict mode) for high-performance eBPF-based direct routing, and MetalLB (L2 mode) for external traffic ingress._
-* **Minimal-Agent Observability Pipeline** : _Designed a lightweight monitoring architecture using OpenTelemetry Collector as a DaemonSet. Offloaded the heavy TSDB backend to Grafana Cloud (Mimir) to strictly maintain the local resource budget while ensuring full observability._
-  * _TSDB Offload to Grafana Cloud : Original plan was to deploy monitoring stacks(prometheus, grafana) on the cluster, fell through due to local host environment resource constraint._
-* **Microservice-Oriented Repository Design** : _Logically divided the project into three distinct repositories (Cluster Infrastructure, GitOps Infra & K8s Manifests, and Application Source Code) to separate concerns and independent deployment lifecycles._
+
+* **Infrastructure as Code for Four VMs:** Defined the VirtualBox VM topology, hostnames, private networking, CPU and memory allocations, and Ansible workspace in the Vagrantfile. The environment consists of one Ansible control node, one Kubernetes control-plane node, and two workers.
+* **Role-based Kubernetes Bootstrap:** Automated Kubernetes node prerequisites, kernel module and network sysctl configuration, CRI-O installation, control-plane initialization, and worker joins through Ansible roles. Separate playbooks manage cluster bootstrap and ArgoCD Core installation.
+* **Resource Optimization within 9 GiB:** Adjusted VM memory allocations and component requests and limits to fit the aggregate VM budget. Used ArgoCD Core and configured resource policies for cluster components, while workload replica counts, JVM heap bounds, and Collector memory settings are managed in the related repositories.
+* **eBPF Networking and External Access:** Skipped the kube-proxy addon and configured Cilium with `kubeProxyReplacement: true`, native routing, direct node routes, and BPF masquerading. MetalLB advertises LoadBalancer IPs in L2 mode, and Cilium handles Service traffic delivery to Pods.
+* **Virtual NIC Compatibility Troubleshooting:** Investigated Cilium startup failures during native XDP acceleration setup down to VirtualBox NIC and Linux driver capabilities. Disabled native XDP acceleration, retained TC-based eBPF networking, and rechecked Cilium status and connectivity while preserving kube-proxy replacement and native routing.
+* **GitOps Bootstrap and Lifecycle Separation:** Installed ArgoCD Core and its CLI through Ansible, then delegated ongoing infrastructure-service and workload reconciliation to the separate GitOps repository. Initial repository credentials and root application setup, image build/push and manifest tag updates, and Grafana Cloud credentials remain manual integration steps.
+* **OpenTelemetry Integration across Repositories:** The GitOps repository deploys the Collector DaemonSet, while the Spring Boot repository configures metrics and traces over OTLP/HTTP and logs through stdout/container files. The Collector exports all three signals to Grafana Cloud using Mimir, Loki, and Tempo, keeping telemetry storage and dashboards outside the local VM budget.
+* **Collector Locality and Metadata Consistency:** In the integrated platform, applied Cilium Local Redirect Policy through GitOps to send OTLP Service traffic to the Collector on the same node, matching the `k8sattributes` Pod cache scope. Metric series missing Kubernetes metadata stopped receiving new samples during validation.
+* **Application Tracing and Log Correlation:** Traced missing spans from the Collector back to application instrumentation and replaced manual tracing bean wiring in the Spring Boot repository with framework auto-configuration, Micrometer Tracing, and the OpenTelemetry bridge. Verified trace/span IDs in application logs and corresponding traces in Grafana Cloud Tempo.
 
 ---
 ### Directory Structure
